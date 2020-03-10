@@ -1,12 +1,10 @@
 turtles-own [surplus reservation-price item?]
 breed [sellers seller]
 breed [buyers buyer]
-globals [ price-history history ]
+globals [ price-history history equilibrium-price]
 
 to setup
   clear-all
-  set history (list "price" "buyer" "seller")
-  set price-history (list 50) ; placeholder value to make plotting easier
   create-sellers n-sellers [
     set reservation-price random 100
     set color red
@@ -22,7 +20,16 @@ to setup
     draw-graph
     set size 3
   ]
+  set history (list "price" "buyer" "seller")
+  find-eqbm-price
+  set price-history (list equilibrium-price) ; placeholder value to make plotting easier
   reset-ticks
+end
+
+to find-eqbm-price ; determine the equilibrium price.
+  let dmnd reverse sort [reservation-price] of buyers
+  let sply sort [reservation-price] of sellers
+  ;; loop over both lists, setting Q* +=1 and letting P* be the midpoint between the lowest dmnd and highest sply reservation prices left while excluding portions where MC > MB.
 end
 
 to draw-graph
