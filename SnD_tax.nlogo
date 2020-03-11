@@ -2,7 +2,7 @@ extensions [csv]
 turtles-own [surplus reservation-price item?]
 breed [sellers seller]
 breed [buyers buyer]
-globals [ price-history history ]
+globals [ price-history history tax-revenue ]
 
 ;;;;;;;;;;;
 ;; Notes ;;
@@ -70,15 +70,14 @@ to try-to-buy
   ]
   let partner min-one-of partners [reservation-price]
   let price [reservation-price] of partner ; consumers extract most of the surplus, but that will make it easier to add taxes to the model.
-;  if tax + [reservation-price] of partner > reservation-price [
   if reservation-price < price + tax [
-;    csv:to-file "output.csv" hicsvtory
     stop
   ] ; don't buy if the price is too high
   buy-at (price + tax)
   ask partner [ sell-at price ]
   set history lput (list price self partner) history ; gather data
   set price-history lput price price-history ; specifically price data
+  set tax-revenue tax-revenue + tax
 end
 
 to buy-at [price]
@@ -134,6 +133,9 @@ to-report rank [ x sorted-list ]
   report position x sorted-list
 end
 
+to-report efficiency
+  report (tax-revenue + sum [surplus] of turtles) / max-surplus
+end
 
 ;; Copyright Rick Weber, 2020
 @#$#@#$#@
@@ -334,7 +336,7 @@ n-buyers
 n-buyers
 0
 500
-150.0
+50.0
 1
 1
 NIL
@@ -349,7 +351,7 @@ n-sellers
 n-sellers
 10
 500
-185.0
+50.0
 1
 1
 NIL
@@ -471,8 +473,8 @@ MONITOR
 877
 788
 efficiency
-(sum [surplus] of turtles) / max-surplus
-17
+efficiency
+6
 1
 11
 
@@ -485,7 +487,7 @@ seller-pool
 seller-pool
 1
 10
-4.0
+10.0
 1
 1
 NIL
@@ -498,10 +500,10 @@ SLIDER
 569
 tax
 tax
--20
-20
--13.0
-1
+-50
+50
+-35.0
+5
 1
 NIL
 HORIZONTAL

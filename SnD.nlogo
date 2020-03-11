@@ -262,7 +262,7 @@ MONITOR
 582
 Last exchange
 last price-history
-17
+4
 1
 11
 
@@ -273,7 +273,7 @@ MONITOR
 363
 NIL
 max price-history
-17
+2
 1
 11
 
@@ -284,7 +284,7 @@ MONITOR
 437
 NIL
 min price-history
-17
+2
 1
 11
 
@@ -295,7 +295,7 @@ MONITOR
 510
 NIL
 mean price-history
-17
+2
 1
 11
 
@@ -327,7 +327,7 @@ n-buyers
 n-buyers
 0
 500
-150.0
+50.0
 1
 1
 NIL
@@ -342,7 +342,7 @@ n-sellers
 n-sellers
 10
 500
-185.0
+50.0
 1
 1
 NIL
@@ -377,7 +377,7 @@ MONITOR
 649
 Minimum ask
 min [reservation-price] of sellers with [color = red]
-17
+2
 1
 11
 
@@ -388,7 +388,7 @@ MONITOR
 709
 Maximum bid
 max [reservation-price] of buyers with [color = blue]
-17
+2
 1
 11
 
@@ -399,7 +399,7 @@ MONITOR
 643
 Total surplus
 sum [surplus] of turtles
-17
+2
 1
 11
 
@@ -410,7 +410,7 @@ MONITOR
 644
 Consumers' Surplus
 sum [surplus] of buyers
-17
+2
 1
 11
 
@@ -421,7 +421,7 @@ MONITOR
 705
 Producers' Surplus
 sum [surplus] of sellers
-17
+2
 1
 11
 
@@ -432,7 +432,7 @@ MONITOR
 771
 NIL
 equilibrium-price
-17
+4
 1
 11
 
@@ -454,7 +454,7 @@ MONITOR
 713
 NIL
 max-surplus
-17
+2
 1
 11
 
@@ -465,7 +465,7 @@ MONITOR
 788
 efficiency
 (sum [surplus] of turtles) / max-surplus
-17
+6
 1
 11
 
@@ -477,8 +477,8 @@ SLIDER
 seller-pool
 seller-pool
 1
-10
-4.0
+20
+20.0
 1
 1
 NIL
@@ -842,6 +842,28 @@ NetLogo 6.1.1
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
+<experiments>
+  <experiment name="Shop-around" repetitions="10" runMetricsEveryStep="true">
+    <setup>setup</setup>
+    <go>go</go>
+    <metric>(sum [surplus] of turtles) / max-surplus</metric>
+    <metric>count buyers with [item?] - equilibrium-quantity</metric>
+    <enumeratedValueSet variable="seller-pool">
+      <value value="1"/>
+      <value value="2"/>
+      <value value="4"/>
+      <value value="8"/>
+      <value value="16"/>
+      <value value="32"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="n-sellers">
+      <value value="150"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="n-buyers">
+      <value value="150"/>
+    </enumeratedValueSet>
+  </experiment>
+</experiments>
 @#$#@#$#@
 @#$#@#$#@
 default
