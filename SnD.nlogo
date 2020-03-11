@@ -4,6 +4,16 @@ breed [sellers seller]
 breed [buyers buyer]
 globals [ price-history history ]
 
+;;;;;;;;;;;
+;; Notes ;;
+;;;;;;;;;;;
+
+;I'm currently building in taxes. This has caused problems.
+;It's harder to let the price be the mid-point between buyers and sellers
+;so I'm just taking the seller's reservation price as the price and adding taxes on top.
+;I think I'm handling subsidies correctly, but my efficiency values for taxes seem off.
+;I've made a bit of a mess here, so I'm glad I pushed to github before I started tinkering.
+
 to setup
   clear-all
   create-sellers n-sellers [
@@ -43,7 +53,7 @@ end
 
 to go
   ; stopping condition
-  if min [reservation-price] of sellers with [item?] > max [reservation-price] of buyers with [not item?] [
+  if tax + min [reservation-price] of sellers with [item?] > max [reservation-price] of buyers with [not item?] [
 ;    csv:to-file "SnD_output.csv" (list history) ; not doing what I want...
     stop
   ]
@@ -53,27 +63,26 @@ to go
 end
 
 to try-to-buy
-  let partners n-of 10 other turtles with [item?] ; shop around
+  let partners n-of seller-pool other turtles with [item?] ; shop around
   ask partners [
     move-to myself ; move here to make visualization easier
     fd 1
   ]
   let partner min-one-of partners [reservation-price]
-  if [reservation-price] of partner > reservation-price [
+  let price [reservation-price] of partner ; consumers extract most of the surplus, but that will make it easier to add taxes to the model.
+;  if tax + [reservation-price] of partner > reservation-price [
+  if reservation-price < price + tax [
 ;    csv:to-file "output.csv" hicsvtory
     stop
   ] ; don't buy if the price is too high
-;  if [color] of partner = blue [ stop ]
-;  if [color] of partner = grey and [breed] of partner = sellers [ stop ]
-  let price mean (list reservation-price [reservation-price] of partner) ; set a price
-  buy-at price
+  buy-at (price + tax)
   ask partner [ sell-at price ]
   set history lput (list price self partner) history ; gather data
   set price-history lput price price-history ; specifically price data
 end
 
 to buy-at [price]
-  set surplus surplus + (reservation-price - price) ;
+  set surplus surplus + (reservation-price - price) + tax;
   set color grey
   set size 1
   set item? true
@@ -325,7 +334,7 @@ n-buyers
 n-buyers
 0
 500
-111.0
+150.0
 1
 1
 NIL
@@ -467,6 +476,36 @@ efficiency
 1
 11
 
+SLIDER
+998
+466
+1170
+499
+seller-pool
+seller-pool
+1
+10
+4.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+998
+536
+1170
+569
+tax
+tax
+-20
+20
+18.0
+1
+1
+NIL
+HORIZONTAL
+
 @#$#@#$#@
 ## WHAT IS IT?
 
@@ -474,41 +513,47 @@ This is a model of Supply and Demand.
 
 ## HOW IT WORKS
 
-Buyers and sellers exchange some good. Buyers look to buy at a price below their reservation price while sellers look to sell at a price higher than their reservation price. 
+Buyers start with some expected value from purchasing "the item" held in the `reservation-price` variable. Sellers start with analogous cost (also held in `reservation-price`) and have the variable `item?` set to _true`.
 
-Buyers randomly select 10 agents with an item to sell ('with [item? = true]') and then select the agent with the lowest reservation price. If that reservation price is lower than the buyers' they make the exchange at a price half way between each of their reservation prices. 
+Buyers look to buy at a price below their reservation price while sellers look to sell at a price higher than their reservation price. 
+
+Buyers randomly select some agents with an item to sell ('with [item? = true]') and then select the agent with the lowest reservation price. If that reservation price is lower than the buyers' they make the exchange at a price half way between each of their reservation prices. 
 
 Buyers who successfully purchase the good can resell if another buyer is willing to pay them more than their reservation price.
 
 ## HOW TO USE IT
 
-You can adjust the number of buyers and sellers. Otherwise, just hit the 'setup' button followed by the 'go' button.
+You can adjust the number of buyers and sellers. You can also adjust the number of sellers approached each time a buyer tries to buy the item.
+
+Otherwise, just hit the `setup` button followed by the `go` button.
 
 ## THINGS TO NOTICE
 
-Agents are working without perfect information, and rationality is limited to avoiding exchanges that reduce an agent's surplus value. 
+Agents are working without perfect information, and rationality is limited to avoiding exchanges that reduce an agent's surplus value. Also, outcomes are highly efficient, even when buyers are buying from a small pool of sellers. 
 
 ## THINGS TO TRY
 
-(suggested things for the user to try to do (move sliders, switches, etc.) with the model)
+Try playing with the seller-pool variable. Observe what happens to the efficiency level and the number of ticks it takes for the model to stop ("market clearing"). Try using the observer to manually override the size of the seller-pool. Does it matter much if a buyer approaches every single seller rather than just a few? 
+
+Look at the turtles. Which turtles sell and which buy? How does this change when we set seller-pool to a very low number?
 
 ## EXTENDING THE MODEL
 
-The model does not currently measure potential total surplus which would allow calculation of the market's efficiency.
+The model could be extended to include price controls, taxes or subsidies. 
 
-The model could also be extended to include price controls, taxes or subsidies, and allowing agents to have more than one unit.
+Currently each agent can buy or sell one unit. In effect, the agents are really modeling the marginal uses and sources. A 'buyer' is really _some_ person buying for one particular use. We could imagine multiple buyer turtles representing the purchase of various units of "the item" for specific uses. Analogously, the seller agents are essentially representing a single source of "the item" to be tapped independently of any consideration beyond an agreeable price. This simplifies implementation, but prevents modeling imperfectly competetive behavior. 
 
 ## NETLOGO FEATURES
 
-(interesting or unusual features of NetLogo that the model uses, particularly in the Code tab; or where workarounds were needed for missing features)
+The rank reporter might be of use in other models. 
 
 ## RELATED MODELS
 
-(models in the NetLogo Models Library and elsewhere which are of related interest)
+I'm not aware of any at this time.
 
 ## CREDITS AND REFERENCES
 
-(a reference to the model's URL on the web if it has one, as well as any other necessary credits, citations, and links)
+This model was built by Rick Weber of Patchogue, Long Island, NY. I'm assuming this model is only really of use for educational purposes which is certainly fair use. If you think you've got a way to make money off this model, please let me know; I'd love for this to be useful, but I'd also like a cut!
 @#$#@#$#@
 default
 true
