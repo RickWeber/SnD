@@ -53,7 +53,10 @@ end
 
 to go
   ; stopping condition
-  if min [reservation-price] of sellers with [item?] > max [reservation-price] of buyers with [not item?] [ stop ]
+  if tax + min [reservation-price] of sellers with [item?] > max [reservation-price] of buyers with [not item?] [
+;    csv:to-file "SnD_output.csv" (list history) ; not doing what I want...
+    stop
+  ]
   ask buyers with [not item?] [try-to-buy] ; if you don't have the item, try to buy it
   draw-graph
   tick
@@ -66,9 +69,13 @@ to try-to-buy
     fd 1
   ]
   let partner min-one-of partners [reservation-price]
-  let price mean list reservation-price [reservation-price] of partner
-  if reservation-price < price [ stop ] ; don't buy if the price is too high
-  buy-at (price)
+  let price [reservation-price] of partner ; consumers extract most of the surplus, but that will make it easier to add taxes to the model.
+;  if tax + [reservation-price] of partner > reservation-price [
+  if reservation-price < price + tax [
+;    csv:to-file "output.csv" hicsvtory
+    stop
+  ] ; don't buy if the price is too high
+  buy-at (price + tax)
   ask partner [ sell-at price ]
   set history lput (list price self partner) history ; gather data
   set price-history lput price price-history ; specifically price data
@@ -479,6 +486,21 @@ seller-pool
 1
 10
 4.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+998
+536
+1170
+569
+tax
+tax
+-20
+20
+-13.0
 1
 1
 NIL
