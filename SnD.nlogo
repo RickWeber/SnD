@@ -1,17 +1,18 @@
+extensions [csv]
 turtles-own [surplus reservation-price item?]
 breed [sellers seller]
 breed [buyers buyer]
-globals [ price-history history equilibrium-price]
+globals [ price-history history ]
 
 to setup
   clear-all
   create-sellers n-sellers [
-    set reservation-price random 100
+    set reservation-price random-float 100 + 1 ; no zero-value sellers (makes drawing the supply curve easier)
     set color red
     set item? true
   ]
   create-buyers n-buyers [
-    set reservation-price random 100
+    set reservation-price random-float 100 + 1 ; no zero-value buyers (makes drawing the demand curve easier)
     set color blue
     set item? false
   ]
@@ -21,57 +22,58 @@ to setup
     set size 3
   ]
   set history (list "price" "buyer" "seller")
-  find-eqbm-price
   set price-history (list equilibrium-price) ; placeholder value to make plotting easier
   reset-ticks
 end
 
-to find-eqbm-price ; determine the equilibrium price.
-  let dmnd reverse sort [reservation-price] of buyers
-  let sply sort [reservation-price] of sellers
-  ;; loop over both lists, setting Q* +=1 and letting P* be the midpoint between the lowest dmnd and highest sply reservation prices left while excluding portions where MC > MB.
-end
-
 to draw-graph
-  let demand-schedule reverse sort (list [reservation-price] of buyers) ; sort prices from highest to lowest
-  let supply-schedule sort (list [reservation-price] of sellers) ; sort prices from lowest to highest
+  let demand-schedule reverse sort ([reservation-price] of buyers) ; sort prices from highest to lowest
+  let ld length demand-schedule
+  let supply-schedule sort ([reservation-price] of sellers) ; sort prices from lowest to highest
+  let ls length supply-schedule
   ask buyers [
     set ycor reservation-price
-    set xcor 100 - reservation-price
+    set xcor (rank reservation-price demand-schedule / max list ld ls) * 100
   ]
   ask sellers [
     set ycor reservation-price
-    set xcor reservation-price
+    set xcor (rank reservation-price supply-schedule / max list ld ls) * 100
   ]
 end
 
 to go
   ; stopping condition
-  if min [reservation-price] of sellers with [color = red] > max [reservation-price] of buyers with [color = blue] [ stop ]
-  ask buyers with [color = blue] [try-to-buy]
+  if min [reservation-price] of sellers with [item?] > max [reservation-price] of buyers with [not item?] [
+;    csv:to-file "SnD_output.csv" (list history) ; not doing what I want...
+    stop
+  ]
+  ask buyers with [not item?] [try-to-buy] ; if you don't have the item, try to buy it
   draw-graph
   tick
 end
 
 to try-to-buy
-  let partners n-of 10 other turtles with [item?]
+  let partners n-of 10 other turtles with [item?] ; shop around
   ask partners [
-    move-to myself
+    move-to myself ; move here to make visualization easier
     fd 1
   ]
   let partner min-one-of partners [reservation-price]
-  if [reservation-price] of partner > reservation-price [ stop ]
-  if [color] of partner = blue [ stop ]
-  if [color] of partner = grey and [breed] of partner = sellers [ stop ]
-  let price mean (list reservation-price [reservation-price] of partner)
+  if [reservation-price] of partner > reservation-price [
+;    csv:to-file "output.csv" hicsvtory
+    stop
+  ] ; don't buy if the price is too high
+;  if [color] of partner = blue [ stop ]
+;  if [color] of partner = grey and [breed] of partner = sellers [ stop ]
+  let price mean (list reservation-price [reservation-price] of partner) ; set a price
   buy-at price
   ask partner [ sell-at price ]
-  set history lput ((list price self partner)) history
-  set price-history lput price price-history
+  set history lput (list price self partner) history ; gather data
+  set price-history lput price price-history ; specifically price data
 end
 
 to buy-at [price]
-  set surplus surplus + (reservation-price - price)
+  set surplus surplus + (reservation-price - price) ;
   set color grey
   set size 1
   set item? true
@@ -86,11 +88,43 @@ to sell-at [price]
   ]
   if breed = buyers [
     set color blue
-    set surplus surplus + price
+    set surplus surplus + (price - reservation-price)
     set size 5
     set item? false
   ]
 end
+
+
+to-report equilibrium-price
+  let demand-schedule reverse sort [reservation-price] of buyers ; descending order of benefits
+  let supply-schedule sort [reservation-price] of sellers ; ascending order of costs
+  if first demand-schedule < first supply-schedule [ report false ]
+  let p 0
+  while [first demand-schedule > first supply-schedule] [ ; if there's a trade to make...
+    set p mean (list first demand-schedule first supply-schedule) ; make a price
+    set demand-schedule but-first demand-schedule ; move down the demand curve
+    set supply-schedule but-first supply-schedule ; and up the supply curve
+  ]
+  report p
+end
+
+to-report equilibrium-quantity
+  report count buyers with [reservation-price >= equilibrium-price]
+end
+
+to-report max-surplus
+  let B buyers with [reservation-price > equilibrium-price]
+  let S sellers with [reservation-price < equilibrium-price]
+  report (sum [reservation-price] of B) - (sum [reservation-price] of S)
+end
+
+to-report rank [ x sorted-list ]
+  if not member? x sorted-list [
+    report 0 ; item not in list
+  ]
+  report position x sorted-list
+end
+
 
 ;; Copyright Rick Weber, 2020
 @#$#@#$#@
@@ -272,7 +306,7 @@ Average price
 NIL
 NIL
 0.0
-10.0
+1.0
 0.0
 10.0
 true
@@ -291,7 +325,7 @@ n-buyers
 n-buyers
 0
 500
-363.0
+111.0
 1
 1
 NIL
@@ -306,7 +340,7 @@ n-sellers
 n-sellers
 10
 500
-475.0
+185.0
 1
 1
 NIL
@@ -352,6 +386,83 @@ MONITOR
 709
 Maximum bid
 max [reservation-price] of buyers with [color = blue]
+17
+1
+11
+
+MONITOR
+776
+598
+876
+643
+Total surplus
+sum [surplus] of turtles
+17
+1
+11
+
+MONITOR
+885
+599
+1033
+644
+Consumers' Surplus
+sum [surplus] of buyers
+17
+1
+11
+
+MONITOR
+781
+660
+920
+705
+Producers' Surplus
+sum [surplus] of sellers
+17
+1
+11
+
+MONITOR
+31
+726
+154
+771
+NIL
+equilibrium-price
+17
+1
+11
+
+MONITOR
+202
+736
+344
+781
+NIL
+equilibrium-quantity
+17
+1
+11
+
+MONITOR
+987
+668
+1082
+713
+NIL
+max-surplus
+17
+1
+11
+
+MONITOR
+803
+743
+877
+788
+efficiency
+(sum [surplus] of turtles) / max-surplus
 17
 1
 11
